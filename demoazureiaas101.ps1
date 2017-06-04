@@ -1,5 +1,5 @@
 #demo cheat sheet 05 Azure IAAS
-
+#sampple powershell
 #slide 8
 #show github 
 #https://github.com/Azure/azure-quickstart-templates
@@ -32,6 +32,7 @@ Get-AzureRmResourceProvider -ListAvailable
 
 #extra
 get-azurermvmusage -location westeurope
+Get-AzureRmStorageUsage
 
 
 #slide 15
