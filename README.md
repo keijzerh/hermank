@@ -1,3 +1,3 @@
 # hermank
-powerhsell commands used in my iaas demo's
+powershell commands used in my iaas demo's
 
