@@ -1,0 +1,6 @@
+#servicebus
+#https://azure.microsoft.com/en-us/documentation/articles/service-bus-powershell-how-to-provision/
+
+https://blogs.perficient.com/microsoft/2016/03/azure-arm-template-create-service-bus-namespaces/
+
+http://wp.sjkp.dk/service-bus-arm-templates/

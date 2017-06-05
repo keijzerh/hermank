@@ -1,0 +1,26 @@
+startup bash
+#check updates 
+sudo apt-get update
+
+az login
+
+
+
+#open webbrowser https://aka.ms/devicelogin
+#enter provided code
+
+az account set --subscription "Microsoft Azure Internal Consumption"
+
+clear
+
+
+az group create -l westeurope -n azdmcl0203
+
+
+# Create a new virtual machine, this creates SSH keys if not present.
+
+az vm create --resource-group azdmcl0203 --name hklxdm03 --image UbuntuLTS --authentication-type Password --admin-username hermank --admin-password P@ssw0rd!
+
+az group delete --name azdmcl0203
+
+az vm list-usage --location westeurope

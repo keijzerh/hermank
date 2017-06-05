@@ -1,0 +1,47 @@
+Open powershell for azure
+
+Install the latest version
+#install the latest version of powershell modules
+#see also https://azure.microsoft.com/nl-nl/documentation/articles/powershell-install-configure/
+
+Install-Module AzureRM
+
+Install-AzureRM
+Import-AzureRM
+
+#get list off installed modules
+Get-Module –ListAvailable
+
+#with csp you must ad -tenantid with every command
+
+$tenantid='6ec54558-8fc2-4da0-8a60-ad48a5260639'
+
+#login into azure 
+Login-AzureRmAccount -tenantid $tenantid
+
+#see also https://azure.microsoft.com/en-us/documentation/articles/virtual-machines-windows-upload-image/
+#select subscription
+Get-AzureRmSubscription -tenantid $tenantid |Select-AzurermSubscription
+
+# create resource group
+$locName = "West Europe"
+$rgName = "TestRG2"
+New-AzureRmResourceGroup -Name $rgName -Location $locName
+
+# create a storage container first check if name does not exist
+#check if name for storageaxxount is free
+Test-AzureName -Storage <Proposed storage account name>
+$stName = "myvhdblob"
+#Test-AzureName -Storage $stName
+#If this command returns "False", your proposed name is unique
+$storageAcc = New-AzureRmStorageAccount -ResourceGroupName $rgName -Name $stName -Type "Standard_GRS" -Location $locName
+
+#create container
+
+$storageAcc=Get-AzureRmStorageAccount -ResourceGroupName $rgName -Name $stName
+New-AzureStorageContainer -Name "images1" -Context $storageAcc.Context -Permission Blob
+
+
+
+#Upload the VHD disk image# built destionation like this "$($storageAcc.PrimaryEndpoints.Blob)CONTAINER_NAME/DISK_IMAGE_NAME.vhd"
+Add-azureRmVhd -localFilePath "C:\TMP\datadisk.vhd" -ResourceGroupName $rgName -Destination "$($storageAcc.PrimaryEndpoints.Blob)vhds/myimage.vhd"

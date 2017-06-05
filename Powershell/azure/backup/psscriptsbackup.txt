@@ -1,0 +1,62 @@
+backup in csp wil nog niet is nog in private preview
+see:
+ https://azure.microsoft.com/en-gb/documentation/articles/backup-client-automation/
+#!!there are errors on the website regarding powershell commands correct are below
+
+#check correct version of azure powershell
+$PSVersionTable
+
+#with csp you must ad -tenantid with every command
+#get tenantid from the portal
+#login into partnercenter
+https://partnercenter.microsoft.com/nl-nl/pcv#/customers/list
+
+$tenantid='6ec54558-8fc2-4da0-8a60-ad48a5260639'
+
+#login into azure
+Login-AzureRmAccount -tenantid $tenantid
+
+#list subscriptions
+Get-AzureRmSubscription -tenantid $tenantid
+
+#select your subscription
+
+
+
+#if you use for the first time register provider
+
+Register-AzureRmResourceProvider -ProviderNamespace "Microsoft.Backup"
+#check status
+Get-AzureRmResourceProvider -ProviderNamespace "Microsoft.Backup"
+
+#create the backupvault in azure
+New-AzureRmResourceGroup –Name “test-rg” -location “West Europe”
+$backupvault = New-AzureRMBackupVault –ResourceGroupName “test-rg” –Name “test-vault” –Region “West Europe” –Storage GeoRedundant
+
+#download lateest backup client
+http://aka.ms/azurebackup_agent
+
+#install client
+MARSAgentInstaller.exe /q
+
+#download the vaultcredentials
+$credspath = "C:\tmp"
+$credsfilename = Get-AzureRMBackupVaultCredentials -Vault $backupvault -TargetLocation $credspath
+$credsfilename
+
+#open the bakcupclient en register from the client
+#commands on the webpage do not work!!
+
+
+#clean up
+
+$Vault = Get-AzureRmBackupVault -Name “test-vault”
+Get-AzureRmBackupContainer -Vault $Vault -Type Windows
+$server = "MININT-PK48GSD.EUROPE.CORP.MICROSOFT.COM"
+$Container = Get-AzureRmBackupContainer -Vault $Vault -Type Windows -Name $server
+Unregister-AzureRmBackupContainer -Container $Container[0]
+!!error
+
+PS C:\> Get-AzureRmBackupVault -Name “test-vault” | Remove-AzureRmBackupVault
+
+remove-AzureRmResourceGroup –Name “test-rg”

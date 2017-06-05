@@ -1,0 +1,44 @@
+create vm's without csp
+see:
+ https://azure.microsoft.com/en-gb/documentation/learning-paths/virtual-machines/
+
+#check correct version of azure powershell
+$PSVersionTable
+
+#
+Login-AzureRmAccount
+
+#list subscriptions
+
+
+Get-AzureRmSubscription | sort SubscriptionName | Select SubscriptionName
+#select subscription
+$subscrName="<subscription name>"
+Select-AzureRmSubscription -SubscriptionName $subscrName 
+
+#list azure locations
+Get-AzureLocation | sort Name | Select Name
+
+#check if name for storageaxxount is free
+Test-AzureName -Storage <Proposed storage account name>
+Test-AzureName -Storage hk193testcsp
+#If this command returns "False", your proposed name is unique
+
+#create the vm
+$stName = "hk193testcsp"
+$locName = "West Europe"
+$rgName = "HKTestRG"
+New-AzureRmResourceGroup -Name $rgName -Location $locName
+$storageAcc = New-AzureRmStorageAccount -ResourceGroupName $rgName -Name $stName -Type "Standard_GRS" -Location $locName
+$singleSubnet = New-AzureRmVirtualNetworkSubnetConfig -Name singleSubnet -AddressPrefix 10.0.0.0/24
+$vnet = New-AzureRmVirtualNetwork -Name TestNet -ResourceGroupName $rgName -Location $locName -AddressPrefix 10.0.0.0/16 -Subnet $singleSubnet
+$pip = New-AzureRmPublicIpAddress -Name TestPIP -ResourceGroupName $rgName -Location $locName -AllocationMethod Dynamic
+$nic = New-AzureRmNetworkInterface -Name TestNIC -ResourceGroupName $rgName -Location $locName -SubnetId $vnet.Subnets[0].Id -PublicIpAddressId $pip.Id
+$cred = Get-Credential -Message "Type the name and password of the local administrator account."
+$vm = New-AzureRmVMConfig -VMName WindowsVM -VMSize "Standard_A1"
+$vm = Set-AzureRmVMOperatingSystem -VM $vm -Windows -ComputerName MyWindowsVM -Credential $cred -ProvisionVMAgent -EnableAutoUpdate
+$vm = Set-AzureRmVMSourceImage -VM $vm -PublisherName MicrosoftWindowsServer -Offer WindowsServer -Skus 2012-R2-Datacenter -Version "latest"
+$vm = Add-AzureRmVMNetworkInterface -VM $vm -Id $nic.Id
+$osDiskUri = $storageAcc.PrimaryEndpoints.Blob.ToString() + "vhds/WindowsVMosDisk.vhd"
+$vm = Set-AzureRmVMOSDisk -VM $vm -Name "windowsvmosdisk" -VhdUri $osDiskUri -CreateOption fromImage
+New-AzureRmVM -ResourceGroupName $rgName -Location $locName -VM $vm

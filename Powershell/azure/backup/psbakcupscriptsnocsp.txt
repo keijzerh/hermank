@@ -1,0 +1,43 @@
+backup in (not csp not avaialble yet, private preview)
+see:
+ https://azure.microsoft.com/en-gb/documentation/articles/backup-client-automation/
+
+#login into azure
+Login-AzureRmAccount
+
+#list subscriptions
+Get-AzureRmSubscription 
+
+#select your subscription
+
+$subscr="<SubscriptionName from the display of Get-AzureRmSubscription>"
+
+$subscr="Microsoft Azure Internal Consumption"
+
+Select-AzureRmSubscription -SubscriptionName $subscr
+
+#if you use for the first time register provider
+
+Register-AzureRmResourceProvider -ProviderNamespace "Microsoft.Backup"
+#check status
+Get-AzureRmResourceProvider -ProviderNamespace "Microsoft.Backup"
+
+#create the backupvault in azure
+New-AzureRmResourceGroup –Name “test-rg” -location “West Europe”
+$backupvault = New-AzureRMBackupVault –ResourceGroupName “test-rg” –Name “test-vault” –Region “West Europe” –Storage GeoRedundant
+
+#download lateest backup client
+http://aka.ms/azurebackup_agent
+
+#install client
+MARSAgentInstaller.exe /q
+
+#download the vaultcredentials
+$credspath = "C:\tmp"
+$credsfilename = Get-AzureRMBackupVaultCredentials -Vault $backupvault -TargetLocation $credspath
+$credsfilename
+
+#open the bakcupclient en register from the client
+#commands on the webpage do not work!!
+#zie https://azure.microsoft.com/nl-nl/documentation/articles/backup-azure-vms-automation/
+

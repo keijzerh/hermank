@@ -1,0 +1,42 @@
+#credentials can be stored in Azure Automation as well:
+#https://azure.microsoft.com/en-us/documentation/articles/automation-credentials/ 
+#$cred = get-credential
+#Add-AzureRmAccount -Credential $cred
+
+#Login-AzureRmAccount
+
+#Destination
+$dest_resourcegroup = "OnPrem"
+$dest_storage_account = "teobackup"
+#Container must exist
+$container = 'vhds'
+$dest_sakey = Get-AzureRMStorageAccountKey -ResourceGroupName $dest_resourcegroup -Name $dest_storage_account
+$destContext = New-AzureStorageContext –StorageAccountName $dest_storage_account -StorageAccountKey $dest_sakey.Key1
+
+#Source
+$src_resourcegroup = "OnPrem"
+$src_storage_account="onpremsg"
+$src_sakey = Get-AzureRMStorageAccountKey -ResourceGroupName $dest_resourcegroup -Name $src_storage_account
+$srcContext = New-AzureStorageContext -StorageAccountName $src_storage_account -StorageAccountKey $src_sakey.Key1
+
+#Cleanup active copies
+Get-AzureStorageContainer -Name $container -Context $srcContext | Get-AzureStorageBlob | Stop-AzureStorageBlobCopy -Force -ErrorAction SilentlyContinue
+
+#create Snapthosts
+$copystatus = @()
+Get-AzureRMStorageAccount -ResourceGroupName $src_resourcegroup -Name $src_storage_account | Get-AzureStorageBlob -Container vhds | Where-Object {($_.Blobtype -EQ 'pageblob') -and ($_.ICloudBlob.IsSnapshot -eq 'false')} | foreach{
+$name = "snapshot-" + $_.name
+$vhdblob = $_
+$snapshot = $vhdblob.ICloudBlob.CreateSnapshot();
+$status = Start-AzureStorageBlobCopy -CloudBlob $snapshot -Context $srcContext -DestContext $destContext -DestContainer $container -DestBlob $name -Force -ConcurrentTaskCount 10
+$copystatus += $status
+$status
+}
+
+#you can loop through $copystatus if you want to monitor and take action:
+#foreach ($item in $copystatus| Get-AzureStorageBlobCopyState)
+#{
+    #$item
+    #$item.Status
+#} 
+

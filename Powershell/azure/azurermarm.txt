@@ -1,0 +1,32 @@
+#see also https://azure.microsoft.com/en-us/documentation/articles/powershell-azure-resource-manager/
+
+#get azure resourece type
+#first login 
+
+Get-AzureRmResourceProvider -ListAvailable
+
+
+#get more details about a provider by specifying that namespace
+Get-AzureRmResourceProvider -ProviderNamespace Microsoft.Sql
+
+#To limit your output to the supported locations for a specific type of of resource, such as web sites, use
+((Get-AzureRmResourceProvider -ProviderNamespace Microsoft.Web).ResourceTypes | Where-Object ResourceTypeName -eq sites).Locations
+#for sql
+((Get-AzureRmResourceProvider -ProviderNamespace Microsoft.Sql).ResourceTypes | Where-Object ResourceTypeName -eq servers).Locations
+#compute
+((Get-AzureRmResourceProvider -ProviderNamespace Microsoft.Compute).ResourceTypes | Where-Object ResourceTypeName -eq virtualMachines).Locations
+#backup BackupVault
+((Get-AzureRmResourceProvider -ProviderNamespace Microsoft.Backup).ResourceTypes | Where-Object ResourceTypeName -eq BackupVault).Locations
+#siterecovery
+((Get-AzureRmResourceProvider -ProviderNamespace Microsoft.SiteRecovery).ResourceTypes | Where-Object ResourceTypeName -eq SiteRecoveryVault).Locations
+#cdn
+((Get-AzureRmResourceProvider -ProviderNamespace Microsoft.CDN).ResourceTypes | Where-Object ResourceTypeName -eq profiles).Locations
+#get resource group
+Get-AzureRmResourceGroup
+
+#get resourcegroup for a particular resourcegroup
+Get-AzureRmResourceGroup -Name TestRG1
+
+#get resources in a resourcegroup
+Find-AzureRmResource -ResourceGroupNameContains TestRG1
+

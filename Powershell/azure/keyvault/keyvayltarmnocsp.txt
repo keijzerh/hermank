@@ -1,0 +1,44 @@
+#keyvault
+#https://azure.microsoft.com/en-us/documentation/articles/key-vault-get-started/
+
+#login into azure
+Login-AzureRmAccount
+
+#list subscriptions
+Get-AzureRmSubscription 
+
+#select your subscription
+
+$subscr="<SubscriptionName from the display of Get-AzureRmSubscription>"
+
+$subscr="Microsoft Azure Internal Consumption"
+
+Select-AzureRmSubscription -SubscriptionName $subscr
+
+$RMname='KeyvaultResourceGroup'
+$mylocation='West Europe'
+$KVname='HKkeyvault'
+
+Register-AzureRmResourceProvider -ProviderNamespace "Microsoft.KeyVault"
+
+New-AzureRmResourceGroup –Name $RMname –Location $mylocation
+#create keyvault
+New-AzureRmKeyVault -VaultName $KVname -ResourceGroupName $RMname -Location $mylocation
+
+#add software protected key
+$key = Add-AzureKeyVaultKey -VaultName $KVname -Name 'ContosoFirstKey' -Destination 'Software'
+
+#You can now reference this key that you created or uploaded to Azure Key Vault, by using its URI. Use #https://HKkeyVault.vault.azure.net/keys/ContosoFirstKey 
+
+#get uri
+$Key.key.kid
+
+#add pasword
+$secretvalue = ConvertTo-SecureString 'Pa$$w0rd' -AsPlainText -Force
+$secret = Set-AzureKeyVaultSecret -VaultName $KVname -Name 'SQLPassword' -SecretValue $secretvalue
+$secret.Id
+
+#You can now reference this key that you created or uploaded to Azure Key Vault, by using its URI. Use #https://HKkeyVault.vault.azure.net/keys/SQLpassword
+
+Get-AzureKeyVaultKey –VaultName $KVname
+Get-AzureKeyVaultSecret –VaultName $KVname

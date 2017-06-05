@@ -1,0 +1,51 @@
+Azure AD
+
+#see https://msdn.microsoft.com/en-us/library/jj151815.aspx
+
+#Install the Azure AD Module
+
+
+#The Azure AD Module is supported on the following Windows operating systems with the default version of Microsoft .NET Framework and Windows PowerShell: #Windows 8.1, Windows 8, Windows 7, Windows Server 2012 R2, Windows Server 2012, or Windows Server 2008 R2. 
+#
+#First install the Microsoft Online Services Sign-In Assistant for IT Professionals RTW from the Microsoft Download Center. Then install the Azure Active #Directory Module for Windows PowerShell (64-bit version), and click Run to run the installer package. 
+#
+#microsoft online service assistent
+#https://www.microsoft.com/en-US/download/details.aspx?id=41950
+#
+#azure ad powershell module
+#http://go.microsoft.com/fwlink/p/?linkid=236297
+
+#check version
+(get-item C:\Windows\System32\WindowsPowerShell\v1.0\Modules\MSOnline\Microsoft.Online.Administration.Automation.PSModule.dll).VersionInfo.FileVersion
+
+#setup provider
+$providerCred = Get-Credential -Message "Please provide your CSP Partner credentials:"
+
+#get the provider domain name, eg.: mcs1aztest.onmicrosoft.com
+$providerDomain = $providerCred.UserName.Split("@")[1]
+
+#setup tenant
+$providerAD = Connect-MsolService -Credential $providerCred
+
+# get list off tenants
+Get-MsolPartnerContract | fl *
+Get-MsolPartnerContract | fl -property name, tenantId
+
+
+#Get the list of Groups in the Provider AzureAD
+Get-MsolGroup
+Write-Output ""
+
+
+Get-MsolGroup | ForEach-Object {
+    Write-Output "Getting users that are members of: "$_.DisplayName
+    Get-MsolGroupMember -GroupObjectId $_.ObjectId
+    Write-Output ""
+    }
+
+#...get tenant information
+Get-MsolPartnerContract | ForEach-Object {
+    Get-MsolCompanyInformation -TenantId $_.tenantId
+}
+
+

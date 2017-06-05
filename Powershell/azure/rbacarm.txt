@@ -1,0 +1,35 @@
+#rbac
+#see also https://azure.microsoft.com/en-us/documentation/articles/role-based-access-control-powershell/
+https://azure.microsoft.com/en-us/documentation/articles/role-based-access-control-manage-access-powershell/
+
+$tenantid='6ec54558-8fc2-4da0-8a60-ad48a5260639'
+
+#login into azure 
+Login-AzureRmAccount -tenantid $tenantid
+
+#list subscriptions
+Get-AzureRmSubscription -tenantid $tenantid
+
+#select subscription
+Get-AzureRmSubscription -tenantid $tenantid |Select-AzurermSubscription
+
+#get role assignment
+Get-AzureRmRoleAssignment
+
+#This will return all the role assignments in the subscription. Two things to notice:
+#1.You need to have read access at the subscription level.
+#2.If the subscription has a lot of role assignment, it may take a while to get all of them
+
+Get-AzureRmRoleDefinition
+#list all roles with their name
+Get-AzureRmRoleDefinition| fl -property name
+
+#assign on subscription level
+
+New-AzureRmRoleAssignment -SignInName <email of user> -RoleDefinitionName <role name in quotes> -Scope <scope such as subscription/subscription id>
+
+New-AzureRmRoleAssignment -SignInName <email of user> -RoleDefinitionName "contributor" -Scope <scope such as subscription/subscription id>
+New-AzureRmRoleAssignment -SignInName <email of user> -RoleDefinitionName "reader" -Scope <scope such as subscription/subscription id>
+New-AzureRmRoleAssignment -SignInName <email of user> -RoleDefinitionName "owner" -Scope <scope such as subscription/subscription id>
+
+

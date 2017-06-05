@@ -1,0 +1,28 @@
+#traffic maanger ARM
+# see also; https://azure.microsoft.com/en-us/documentation/articles/traffic-manager-powershell-arm/
+
+#login
+Login-AzureRmAccount
+#select subscription
+#list subscriptions
+Get-AzureRmSubscription | sort SubscriptionName | Select SubscriptionName
+#select subscription
+$subscrName="<subscription name>"
+
+Set-AzureRmContext -SubscriptionName $subscrName
+#register provider
+Register-AzureRmResourceProvider –ProviderNamespace Microsoft.Network
+
+#create resourcegroup
+New-AzureRmResourceGroup -Name MyRG -Location "West Europe"
+
+#create traffice profile
+$profile = New-AzureRmTrafficManagerProfile –Name MyProfile -ResourceGroupName MyRG -TrafficRoutingMethod Performance -RelativeDnsName contoso -Ttl 30 -MonitorProtocol HTTP -MonitorPort 80 -MonitorPath "/"
+
+#get trafficeprofile
+$profile = Get-AzureRmTrafficManagerProfile –Name MyProfile -ResourceGroupName MyRG
+
+#updating profile
+$profile = Get-AzureTrafficManagerProfile –Name MyProfile -ResourceGroupName MyRG
+$profile.Ttl = 300
+Set-AzureTrafficManagerProfile –TrafficManagerProfile $profile

@@ -1,0 +1,126 @@
+cli commands
+#https://docs.microsoft.com/en-us/azure/xplat-cli-install
+#https://nodejs.org/en/download/package-manager/
+#see https://docs.microsoft.com/en-us/azure/virtual-machines/azure-cli-arm-commands?toc=%2fazure%2fvirtual-machines%2flinux%2ftoc.json
+
+#install cli2.0
+#https://docs.microsoft.com/en-us/cli/azure/install-azure-cli
+echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ wheezy main" | \
+     sudo tee /etc/apt/sources.list.d/azure-cli.list
+
+sudo apt-key adv --keyserver packages.microsoft.com --recv-keys 417A0893
+sudo apt-get install apt-transport-https
+sudo apt-get update && sudo apt-get install azure-cli
+
+startup bash
+#check updates
+sudo apt-get upgrade
+
+#cli 2.0 op win10 bash
+#zie https://docs.microsoft.com/en-us/cli/azure/install-az-cli2#ubuntu
+sudo apt-get update && sudo apt-get install -y libssl-dev libffi-dev python-dev
+curl -L https://aka.ms/InstallAzureCli | bash
+
+
+
+#in cli 2.0
+#zie ook https://github.com/Azure/azure-cli/blob/master/doc/azure2az_commands.rst
+
+az
+
+az login
+
+
+
+#open webbrowser https://aka.ms/devicelogin
+#enter provided code
+
+az account set --subscription "Microsoft Azure Internal Consumption"
+
+
+
+az group list
+
+az account list-locations
+az account list-locations --output table
+
+clear
+
+az group create -l westus -n MyRG
+
+
+az vm create -g MyRG -n MyVM --admin-username admin --admin-password Password@1234
+
+
+az cloud list --output list
+
+
+
+#create linux vm
+#https://docs.microsoft.com/en-us/azure/virtual-machines/virtual-machines-linux-quick-create-cli?toc=%2fcli%2fazure%2ftoc.json&bc=%2fcli%2fazure%2fbreadcrumb%2ftoc.json
+
+az vm create \
+--image credativ:Debian:8:latest \
+--admin-username ops \
+--ssh-key-value ~/.ssh/id_rsa.pub \
+--public-ip-address-dns-name hkdm45 \
+--resource-group myResourceGroup \
+--location westus \
+--name myVM
+
+
+@ssh login
+ssh ops@hkdm45.westus.cloudapp.azure.com
+
+
+
+#working with storage
+#https://docs.microsoft.com/en-us/azure/storage/storage-azure-cli?toc=%2fcli%2fazure%2ftoc.json&bc=%2fcli%2fazure%2fbreadcrumb%2ftoc.json
+
+#!/bin/bash
+# A simple Azure Storage example script
+
+
+export AZURE_STORAGE_ACCOUNT=<storage_account_name>
+
+export AZURE_STORAGE_ACCESS_KEY=<storage_account_key>
+
+
+
+export container_name=<container_name>
+
+export blob_name=<blob_name>
+
+export file_to_upload=<file_to_upload>
+
+export destination_file=<destination_file>
+
+
+
+echo "Creating the container..."
+
+az storage container create -n $container_name
+
+
+
+echo "Uploading the file..."
+
+az storage blob upload -f $file_to_upload -c $container_name -n $blob_name
+
+
+
+echo "Listing the blobs..."
+
+az storage blob list -c $container_name
+
+
+
+echo "Downloading the file..."
+
+az storage blob download -c $container_name -n $blob_name -f $destination_file
+
+
+
+echo "Done"
+
+

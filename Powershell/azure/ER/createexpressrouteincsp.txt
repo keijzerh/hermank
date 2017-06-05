@@ -1,0 +1,44 @@
+#expressroute for csp
+#see https://azure.microsoft.com/nl-nl/documentation/articles/expressroute-howto-circuit-arm/
+
+#install the latest version of powershell modules
+Install-Module AzureRM
+
+Install-AzureRM
+Import-AzureRM
+Import-Module AzureRM.Network
+
+#check correct version of azure powershell
+$PSVersionTable
+
+#with csp you must ad -tenantid with every command
+#get tenantid from the portal
+#login into partnercenter get the tenantid = microsoftid in de portal
+#https://partnercenter.microsoft.com/nl-nl/pcv#/customers/list
+
+$tenantid='6ec54558-8fc2-4da0-8a60-ad48a5260639'
+
+#login into azure 
+Login-AzureRmAccount -tenantid $tenantid
+
+#select subscriptions
+Get-AzureRmSubscription -tenantid $tenantid |Select-AzurermSubscription
+
+Register-AzureRmResourceProvider -ProviderNamespace Microsoft.Network
+
+Get-AzureRmExpressRouteServiceProvider
+
+New-AzureRmResourceGroup -Name "ExpressRouteResourceGroup" -Location "West Europe"
+
+New-AzureRmExpressRouteCircuit -Name "ExpressRouteARMCircuit" -ResourceGroupName "ExpressRouteResourceGroup" -Location "West Europe" -SkuTier Standard -SkuFamily MeteredData -ServiceProviderName "Interxion" -PeeringLocation "Amsterdam" -BandwidthInMbps 200
+
+#skutier standard or premium
+#skufamily MeterdData or unlimiteddata
+
+#de result of this commmand is the servicekey you need this with your ER provider
+
+#Getting service key
+Get-AzureRmExpressRouteCircuit -Name "ExpressRouteARMCircuit" -ResourceGroupName "ExpressRouteResourceGroup"
+
+#removing the circuit
+Remove-AzureRmExpressRouteCircuit -Name "ExpressRouteARMCircuit" -ResourceGroupName "ExpressRouteResourceGroup"

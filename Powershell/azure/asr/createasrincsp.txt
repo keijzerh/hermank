@@ -1,0 +1,127 @@
+create ASR with csp
+see:
+https://azure.microsoft.com/en-gb/documentation/learning-paths/site-recovery/
+
+#check correct version of azure powershell
+$PSVersionTable
+
+#with csp you must ad -tenantid with every command
+#get tenantid from the portal
+#login into partnercenter
+https://partnercenter.microsoft.com/nl-nl/pcv#/customers/list
+
+$tenantid='6ec54558-8fc2-4da0-8a60-ad48a5260639'
+
+#login into azure (HK@testtesttonykrij.onmicrosoft.com)
+Login-AzureRmAccount -tenantid $tenantid
+
+#list subscriptions
+Get-AzureRmSubscription -tenantid $tenantid
+
+#Verify that your subscription is registered to use the Azure Providers for Recovery Services and Site Recovery using the following commands:-
+
+Get-AzureRmResourceProvider -ProviderNamespace Microsoft.RecoveryServices
+Get-AzureRmResourceProvider -ProviderNamespace Microsoft.SiteRecovery
+
+#If the RegistrationState is set to Registered in the output of the above two commands you can proceed to Step 2. #If not you'll need to register the missing provider in your subscription.
+
+#registring
+Register-AzureRmResourceProvider -ProviderNamespace Microsoft.SiteRecovery
+Register-AzureRmProviderFeature -FeatureName betaAccess -ProviderNamespace Microsoft.RecoveryServices
+
+# !!!! It may take upto an hour to enable access to the Recovery Services provider on your subscription after successful # completion of the above command
+
+#list azure locations
+Get-AzureLocation | sort Name | Select Name
+
+#create recovery fault
+$geo = "West Europe"
+$ResourceGroupName = "TestAsr"
+New-AzureRmResourceGroup -Name $ResourceGroupName -Location $Geo  
+
+#get list of existing faaults
+Get-AzureRmRecoveryServicesVault 
+
+#create asr service
+$AsrName = "TestASRvault"
+$vault = New-AzureRmRecoveryServicesVault -Name $AsrName -ResourceGroupName $ResourceGroupName -Location $geo
+
+#generate key
+$path = "c:\tmp"
+Get-AzureRmRecoveryServicesVaultSettingsFile -Vault $vault -Path $path
+
+#import keyfile
+Import-AzureRmSiteRecoveryVaultSettingsFile -Path $path 
+
+#create hyper-v site
+$sitename = "MyAsrSite"                
+New-AzureRmSiteRecoverySite -Name $sitename
+
+#genertate and download key for site
+$SiteIdentifier = Get-AzureRmSiteRecoverySite -Name $sitename | Select -ExpandProperty SiteIdentifier
+Get-AzureRmRecoveryServicesVaultSettingsFile -Vault $vault -SiteIdentifier $SiteIdentifier -SiteFriendlyName $sitename -Path $Path
+
+#download installer
+https://aka.ms/downloaddra
+#Run the installer on your Hyper-V host and at the end of the installation continue to the Register step
+#Provide the downloaded site registration key when prompted and complete registration of the Hyper-V host to the site
+
+#verify that hyper-v host got registered
+$server =  Get-AzureRmSiteRecoveryServer -FriendlyName $server-friendlyname 
+
+#create replication policy
+$ReplicationFrequencyInSeconds = "300"
+#options are 30,300,900
+$PolicyName = “replicapolicy”
+#specify the number of recovery points
+$Recoverypoints = 6  
+$storageaccountID = Get-AzureRmStorageAccount -Name "mystorea" -ResourceGroupName "MyRG" | Select -ExpandProperty Id 
+$PolicyResult = New-AzureRmSiteRecoveryPolicy -Name $PolicyName -ReplicationProvider “HyperVReplicaAzure” -ReplicationFrequencyInSeconds $ReplicationFrequencyInSeconds  -RecoveryPoints $Recoverypoints -ApplicationConsistentSnapshotFrequencyInHours 1 -RecoveryAzureStorageAccountId $storageaccountID
+
+#Important:
+#
+#The Storage Account specified should be in the same Azure region as your recovery services vault and should have Geo-replication #enabled
+
+#get the protection container corresponding to the site
+$protectionContainer = Get-AzureRmSiteRecoveryProtectionContainer
+
+#start the association of the protection container
+$Policy = Get-AzureRmSiteRecoveryPolicy -FriendlyName $PolicyName
+$associationJob  = Start-AzureRmSiteRecoveryPolicyAssociationJob -Policy $Policy -PrimaryProtectionContainer $protectionContainer
+
+#!!Wait for the association job to complete and ensure that it completed successfully
+
+#enable protection get the protection entity corresponding to the vm you want to protect
+#Name of the VM
+$VMFriendlyName = "Fabrikam-app"                     
+$protectionEntity = Get-AzureRmSiteRecoveryProtectionEntity -ProtectionContainer $protectionContainer -FriendlyName $VMFriendlyName
+
+#start protecting the vm
+# "Windows" or "Linux"
+$Ostype = "Windows"                                 
+$DRjob = Set-AzureRmSiteRecoveryProtectionEntity -ProtectionEntity $protectionEntity -Policy $Policy -Protection Enable -RecoveryAzureStorageAccountId $storageaccountID  -OS $OStype -OSDiskName $protectionEntity.Disks[0].Name
+
+#check status
+$DRjob = Get-AzureRmSiteRecoveryJob -Job $DRjob
+
+$DRjob | Select-Object -ExpandProperty State Succeeded
+
+$DRjob | Select-Object -ExpandProperty StateDescription Completed
+
+#Update recovery properties such as the the VM Role size and Azure network to attach the VM's NIC's to upon failover
+
+$nw1 = Get-AzureRmVirtualNetwork -Name "FailoverNw" -ResourceGroupName "MyRG"
+$VMFriendlyName = "Fabrikam-App"
+$VM = Get-AzureRmSiteRecoveryVM -ProtectionContainer $protectionContainer -FriendlyName $VMFriendlyName
+$UpdateJob = Set-AzureRmSiteRecoveryVM -VirtualMachine $VM -PrimaryNic $VM.NicDetailsList[0].NicId -RecoveryNetworkId $nw1.Id -RecoveryNicSubnetName $nw1.Subnets[0].Name
+$UpdateJob = Get-AzureRmSiteRecoveryJob -Job $UpdateJob
+$UpdateJob
+
+#run test failover
+#Specify Azure vnet name and resource group
+$nw = Get-AzureRmVirtualNetwork -Name "TestFailoverNw" -ResourceGroupName "MyRG" 
+$protectionEntity = Get-AzureRmSiteRecoveryProtectionEntity -FriendlyName $VMFriendlyName -ProtectionContainer $protectionContainer
+$TFjob = Start-AzureRmSiteRecoveryTestFailoverJob -ProtectionEntity $protectionEntity 
+
+#complete test failover
+$TFjob = Resume-AzureRmSiteRecoveryJob -Job $TFjob
